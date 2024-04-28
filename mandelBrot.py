@@ -64,39 +64,63 @@ def compute_mandelbrot_serial(width, height, max_iter):
     return image
 
 if __name__ == '__main__':
-    width, height = 800, 800
+    # width, height = 800, 800
+    dimensions =[800,1000,1200,1400,1600]
+    process_counts = [1,2,3,4]
     max_iter = 100
-    speed_ups = []
-    efficiencies = []
+    # speed_ups = []
+    # efficiencies = []
 
-    # Seri süre ölçümü
-    start_time_serial = time.time()
-    image_serial = compute_mandelbrot_serial(width, height, max_iter)
-    elapsed_time_serial = time.time() - start_time_serial
+    #Grafikler için hazırlık
+    fig, axs = plt.subplots(len(dimensions), 2, figsize=(12, 15))
+    fig.suptitle('İşlemci Sayisina ve Boyuta Göre Mandelbrot Hesaplama Performans Karsilastirmasi')
 
-    # Farklı işlemci sayıları için paralel hesaplama ve metriklerin hesaplanması
-    for num_processes in [1, 2, 3, 4]:
-        start_time_parallel = time.time()
-        image_parallel = compute_mandelbrot_parallel(num_processes, width, height, max_iter)
-        elapsed_time_parallel = time.time() - start_time_parallel
-        speed_up = elapsed_time_serial / elapsed_time_parallel
-        efficiency = speed_up / num_processes
-        speed_ups.append(speed_up)
-        efficiencies.append(efficiency)
-        print(f"{num_processes} islemci ile sure: {elapsed_time_parallel:.2f} saniye, "
-              f"Speed-up: {speed_up:.2f}, Efficiency: %{efficiency * 100:.2f}")
+    for i, dimension in enumerate(dimensions):
+        width = height = dimension
+        speed_ups = []
+        efficiencies = []
 
+        # Seri süre ölçümü
+        start_time_serial = time.time()
+        image_serial = compute_mandelbrot_serial(width, height, max_iter)
+        elapsed_time_serial = time.time() - start_time_serial
 
-    # Hızlanma ve verimlilik grafiği
-    plt.figure(figsize=(10, 5))
-    plt.plot([1, 2, 3, 4], speed_ups, 'o-', label='Hizlanma (Speed-up)')
-    plt.plot([1, 2, 3, 4], efficiencies, 'o-', label='Verimlilik (Efficiency)')
-    plt.xlabel('İşlemci Sayisi')
-    plt.ylabel('Degerler')
-    plt.title('Mandelbrot Hesaplama Performans Karsilastirmasi')
-    plt.legend()
-    plt.grid(True)
+        for num_processes in process_counts:
+            # Paralel süre ölçümü
+            start_time_parallel = time.time()
+            image_parallel = compute_mandelbrot_parallel(num_processes, width, height, max_iter)
+            elapsed_time_parallel = time.time() - start_time_parallel
+
+            # Hızlanma ve verimlilik hesaplama
+            speed_up = elapsed_time_serial / elapsed_time_parallel
+            efficiency = speed_up / num_processes
+            speed_ups.append(speed_up)
+            efficiencies.append(efficiency)
+
+            print(f"{num_processes} islemci, {dimension}x{dimension} boyut icin sureler: Seri: {elapsed_time_serial:.2f} s, Paralel: {elapsed_time_parallel:.2f} s, "
+                  f"Hizlanma: {speed_up:.2f}, Verimlilik: %{efficiency * 100:.2f}")
+            
+         # Grafik çizimi
+        axs[i, 0].plot(process_counts, speed_ups, 'o-', label=f'{dimension}x{dimension} Hizlanma')
+        axs[i, 1].plot(process_counts, efficiencies, 'o-', label=f'{dimension}x{dimension} Verimlilik')
+
+        axs[i, 0].set_xlabel('İşlemci Sayisi')
+        axs[i, 0].set_ylabel('Hizlanma')
+        axs[i, 0].set_title(f'{dimension}x{dimension} Hizlanma')
+        axs[i, 0].grid(True)
+        axs[i, 0].legend()
+
+        axs[i, 1].set_xlabel('İşlemci Sayisi')
+        axs[i, 1].set_ylabel('Verimlilik (%)')
+        axs[i, 1].set_title(f'{dimension}x{dimension} Verimlilik')
+        axs[i, 1].grid(True)
+        axs[i, 1].legend()
+
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show(block=False)
+
+
+
 
     # MandelBrot grafiği
     plt.figure(figsize=(10, 5))
